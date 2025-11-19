@@ -90,14 +90,6 @@ def data_preparation(file_path: str, number_of_reduced_dimensions: int):
     return features, labels
 
 
-def compute_abs_pearson_correlation(data_points: torch.Tensor):
-    df_temp = pd.DataFrame(data_points)
-    pearson_corr = df_temp.T.corr(method="pearson")
-    pearson_coor_abs = pearson_corr.abs()
-    pearson_abs_tensor = torch.tensor(pearson_coor_abs.values, dtype=torch.float32)
-    return pearson_abs_tensor
-
-
 def create_sparse_edges_with_threshold(
     data_points_correlation: torch.Tensor, threshold: int
 ):
@@ -120,12 +112,11 @@ def create_sparse_edges_with_threshold(
 
     return edge_index
 
-
 def prepare_dataset_masks(
-    data_points_number: int, train_split: int = 0.7, test_split: int = 0.3
-):
+    data_points_number: int, train_split: int = 0.8, validation_split = 0.1, test_split: int = 0.1):
 
     num_train = int(train_split * data_points_number)
+    num_validation = int(validation_split * data_points_number)
     num_test = int(test_split * data_points_number)
 
     perm = torch.randperm(data_points_number)
@@ -140,6 +131,55 @@ def prepare_dataset_masks(
     test_mask[test_idx] = True
 
     return train_mask, test_mask
+
+def show_correlation():
+    pass
+
+def show_graph():
+    pass
+
+##-------------------------------------------
+
+def load_raw_data(file_path):
+    df = pd.read_csv(file_path)
+
+    label_column = df.iloc[:, 0]
+    raw_labels = torch.tensor(label_column == "Luminal B    ", dtype=torch.long)
+
+    feature_df = df.iloc[:, 1:]
+    raw_features = torch.tensor(feature_df.values, dtype=torch.float32)
+
+    return raw_features, raw_labels
+
+def normalize_and_cleanup_features(raw_features, target_dims):
+
+    # remove features with 0 values
+    mask = (raw_features != 0).any(dim=0)
+
+    filtered_features = raw_features[:, mask]
+
+    # apply standard scaling
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(filtered_features)
+
+    # apply PCA for dimensionality reduction
+    pca = PCA(n_components=target_dims)
+    reduced_features = pca.fit_transform(scaled_features)
+
+    return torch.tensor(reduced_features, dtype=torch.float32)
+
+def compute_abs_pearson_correlation(features: torch.Tensor):
+    df_temp = pd.DataFrame(features)
+    pearson_corr = df_temp.T.corr(method="pearson")
+    pearson_coor_abs = pearson_corr.abs()
+    pearson_abs_tensor = torch.tensor(pearson_coor_abs.values, dtype=torch.float32)
+    return pearson_abs_tensor
+
+def execute_experiment(features, labels):
+    # dataset split only training+validation and test
+    # training
+    # testing
+    pass
 
 def set_all_seeds(seed=42):
 
@@ -159,31 +199,37 @@ def set_all_seeds(seed=42):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-def show_correlation():
-    pass
-
-
-def show_graph():
-    pass
-
-
 def main():
-    torch.manual_seed(1234567)
+    set_all_seeds(42)
 
-    features, labels = data_preparation("dataset_LUMINAL_A_B.csv", 40)
-    number_of_points = features.shape[0]
+    raw_features, labels = load_raw_data("dataset_LUMINAL_A_B.csv")
+    features = normalize_and_cleanup_features(raw_features, target_dims=40)
+    features_correlation = compute_abs_pearson_correlation(features)
 
-    correlation = compute_abs_pearson_correlation(features)
+    # TODO: dataset split training, validation, test and hyper parameter selection
+
+    #seeds = [1234567]
+    #for seed in seeds:
+    #    set_all_seeds(seed)
+    #    execute_experiment(raw_features, labels)
+    
+
+    features2, labels2 = data_preparation("dataset_LUMINAL_A_B.csv", 40)
+    correlation = compute_abs_pearson_correlation(features2)
+    pass
+
+    '''
     edges = create_sparse_edges_with_threshold(correlation, 0.4)
 
+    number_of_points = features.shape[0]
     train_mask, test_mask = prepare_dataset_masks(number_of_points)
-
+    
     model = GCN(input_channels=features.shape[1], hidden_channels=8, output_channels=2)
 
     train_gnn(model, 100, features, labels, edges, train_mask, verbose=False)
     test_accuracy = test_gnn(model, features, labels, edges, test_mask)
     print(f"Test Accuracy: {test_accuracy:.4f}")
-
+    '''
 
 if __name__ == "__main__":
     main()
