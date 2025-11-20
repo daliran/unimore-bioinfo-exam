@@ -2,6 +2,12 @@ import numpy as np
 import random
 import torch
 
+seed_pool = [
+    12, 37, 58, 93, 117, 142, 199, 224, 255, 312,
+    345, 389, 415, 456, 489, 512, 578, 603, 644, 677,
+    702, 745, 799, 820, 856, 901, 933, 974, 1003, 1044
+]
+
 def set_common_seeds(seed=42):
 
     if seed is None:

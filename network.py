@@ -43,7 +43,9 @@ def train_network(
     labels,
     edge_index,
     train_mask,
+    eval_mask,
     epochs=200,
+    patience = 100,
     learning_rate=0.01,
     weight_decay=5e-4,
     verbose=False
@@ -61,9 +63,13 @@ def train_network(
     )
     criterion = torch.nn.CrossEntropyLoss()
 
-    last_accuracy = 0
+    last_train_accuracy = 0
+    last_eval_accuracy = 0
+    best_eval_accuracy = 0
+    patience_counter = 0
 
     for epoch in range(epochs):
+        model.train()
         optimizer.zero_grad()
         out = model(features, edge_index)
         loss = criterion(out[train_mask], labels[train_mask])
@@ -74,22 +80,24 @@ def train_network(
             print(f"Epoch: {epoch:03d}, Loss: {loss:.4f}")
 
         with torch.no_grad():
-            accuracy = calculate_accuracy(out, labels, train_mask)
-            last_accuracy = accuracy
+            model.eval()
+            out = model(features, edge_index)
+            train_accuracy = calculate_accuracy(out, labels, train_mask)
+            eval_accuracy = calculate_accuracy(out, labels, eval_mask)
 
-    return last_accuracy
+            last_train_accuracy = train_accuracy
+            last_eval_accuracy = eval_accuracy
 
-def evaluate_network(model: GNN, device, features, labels, edge_index, eval_mask):
+            if last_eval_accuracy > best_eval_accuracy:
+                best_eval_accuracy = last_eval_accuracy
+                patience_counter = 0           
+                best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()} 
+            else:
+                patience_counter +=1
 
-    model = model.to(device)
-    features = features.to(device)
-    labels = labels.to(device)
-    edge_index = edge_index.to(device)
-    eval_mask = eval_mask.to(device)
+            if patience_counter >= patience:
+                break
 
-    model.eval()
+    model.load_state_dict(best_state)
 
-    with torch.no_grad():
-        out = model(features, edge_index)
-        accuracy = calculate_accuracy(out, labels, eval_mask)
-        return accuracy
+    return last_train_accuracy, last_eval_accuracy, best_eval_accuracy
