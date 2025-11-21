@@ -26,7 +26,7 @@ def objective(
         dropout=dropout,
     )
 
-    last_train_accuracy, last_eval_accuracy, best_eval_accuracy = train_network(
+    train_accuracy, eval_accuracy, best_eval_accuracy = train_network(
         model=model,
         device=device,
         features=features,

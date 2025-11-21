@@ -54,16 +54,18 @@ def load_raw_data(file_path):
 
     return raw_features, raw_labels
 
-def normalize_and_cleanup_features(raw_features, target_dims, seed):
-
+def remove_null_features(raw_features):
     # remove features with 0 values
     mask = (raw_features != 0).any(dim=0)
-
     filtered_features = raw_features[:, mask]
+    return filtered_features
 
+
+def normalize_features(features, target_dims, seed):
     # apply standard scaling
     scaler = StandardScaler()
-    scaled_features = scaler.fit_transform(filtered_features.numpy())
+
+    scaled_data = scaler.fit_transform(features.numpy())
 
     # apply PCA for dimensionality reduction
     if seed is not None:
@@ -71,9 +73,35 @@ def normalize_and_cleanup_features(raw_features, target_dims, seed):
     else:
         pca = PCA(n_components=target_dims)
 
-    reduced_features = pca.fit_transform(scaled_features)
+    reduced_data = pca.fit_transform(scaled_data)
 
-    return torch.tensor(reduced_features, dtype=torch.float32)
+    normalized_data = torch.tensor(reduced_data, dtype=torch.float32)
+
+    return normalized_data
+
+
+def normalize_features2(raw_features, training_mask, eval_mask, target_dims, seed):
+    training_data = raw_features[training_mask].numpy()
+    eval_data = raw_features[eval_mask].numpy()
+
+    # apply standard scaling
+    scaler = StandardScaler()
+    training_scaled_data = scaler.fit_transform(training_data)
+    eval_scaled_data = scaler.transform(eval_data)
+
+    # apply PCA for dimensionality reduction
+    if seed is not None:
+        pca = PCA(n_components=target_dims, random_state=seed)
+    else:
+        pca = PCA(n_components=target_dims)
+
+    training_reduced_data = pca.fit_transform(training_scaled_data)
+    eval_reduced_data = pca.transform(eval_scaled_data)
+
+    normalized_training_data = torch.tensor(training_reduced_data, dtype=torch.float32)
+    normalized_eval_data = torch.tensor(eval_reduced_data, dtype=torch.float32)
+
+    return normalized_training_data, normalized_eval_data
 
 def compute_abs_pearson_correlation(features: torch.Tensor):
     df_temp = pd.DataFrame(features.numpy())
