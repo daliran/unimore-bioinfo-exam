@@ -127,9 +127,6 @@ def create_sparse_edges_with_threshold(
             if features_correlation[i, j] > threshold:
                 edges.append((i, j))
 
-                # undirected
-                edges.append((j, i))
-
     edge_index = torch.tensor(edges).T
 
     return edge_index

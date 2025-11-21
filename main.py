@@ -23,8 +23,8 @@ def main():
     raw_features, labels = load_raw_data("dataset_LUMINAL_A_B.csv")
 
     # Check if labels are balanced
-    counts = torch.bincount(labels)
-    print(counts)
+    #counts = torch.bincount(labels)
+    #print(counts)
 
     cleanued_features = remove_null_features(raw_features)
 
