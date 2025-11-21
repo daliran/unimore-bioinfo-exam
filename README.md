@@ -29,6 +29,8 @@ Normally standard scaling and PCA should be fit only to the training data to avo
 In transductive learning all the data is provided to the GNN, so we cannot fit only the training data otherwise the features will have incompatible values.
 The fit must be done on the entire dataset. This is a special case.
 
+Labels in the dataset are balanced 50-50.
+
 # HPO phase
 Split dataset into training, validation, test using a fixed global seed.
 HPO is performed using the validation set in eval -> HPO must not see the test split

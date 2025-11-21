@@ -1,7 +1,7 @@
 import optuna
 from optuna.trial import Trial
 from functools import partial
-from network import GNN, train_network
+from gnn_network import GNN, train_network
 
 
 def objective(

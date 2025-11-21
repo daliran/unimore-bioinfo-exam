@@ -1,7 +1,7 @@
 import torch
-from seeds import set_common_seeds, seed_pool
-from network import GNN, train_network
-from dataset import (
+from gnn_stats import seed_pool, set_common_seeds, mean_confidence_interval
+from gnn_network import GNN, train_network
+from gnn_dataset import (
     load_raw_data,
     remove_null_features,
     normalize_features,
@@ -11,22 +11,8 @@ from dataset import (
     create_dataset_masks,
     merge_dataset_masks,
 )
-from hpo import execute_hpo
-
-import numpy as np
-from scipy import stats
-
-
-def mean_confidence_interval(data, confidence=0.95):
-    a = np.array(data)
-    n = len(a)
-    mean = a.mean()
-    sem = a.std(ddof=1) / np.sqrt(n)  # sample standard error
-    # t critical
-    t_crit = stats.t.ppf((1 + confidence) / 2.0, n - 1)
-    margin = sem * t_crit
-    return mean, mean - margin, mean + margin
-
+from gnn_hpo import execute_hpo
+from gnn_visualization import visualize_graph, show_correlations
 
 def main():
     global_seed = 42
@@ -35,21 +21,27 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     raw_features, labels = load_raw_data("dataset_LUMINAL_A_B.csv")
-    # TODO: check label balance
+
+    # Check if labels are balanced
+    counts = torch.bincount(labels)
+    print(counts)
 
     cleanued_features = remove_null_features(raw_features)
 
-    features = normalize_features(
-        features = cleanued_features, target_dims=40, seed=global_seed
+    normalized_features = normalize_features(
+        cleanued_features, target_dims=40, seed=global_seed
     )
 
-    number_of_points = features.shape[0]
-    number_of_dimensions = features.shape[1]
+    number_of_nodes = int(normalized_features.shape[0])
+    number_of_dimensions = int(normalized_features.shape[1])
 
-    features_correlation = compute_abs_pearson_correlation(features)
+    features_correlation = compute_abs_pearson_correlation(normalized_features)
 
-    # edge_index = create_sparse_edges_with_threshold(features_correlation, 0.4)
+    #show_correlations(features_correlation)
+    #edge_index = create_sparse_edges_with_threshold(features_correlation, 0.4)
     edge_index = create_sparse_edges_with_knn(features_correlation, k=5)
+
+    visualize_graph(normalized_features, edge_index, number_of_nodes, labels)
 
     """ 
     train_mask, val_mask, test_mask = create_dataset_masks(
@@ -78,7 +70,7 @@ def main():
         set_common_seeds(seed)
 
         train_mask, val_mask, test_mask = create_dataset_masks(
-            points=number_of_points,
+            points=number_of_nodes,
             train_split=0.8,
             val_split=0.1,
             test_split=0.1,
@@ -98,7 +90,7 @@ def main():
         train_accuracy, eval_accuracy, best_eval_accuracy = train_network(
             model=model,
             device=device,
-            features=features,
+            features=normalized_features,
             labels=labels,
             edge_index=edge_index,
             train_mask=train_mask,
