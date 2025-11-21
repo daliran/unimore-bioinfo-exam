@@ -1,35 +1,55 @@
 # Task
+The objective of this lab is to perform a graph node classification using a GNN.
+In the dataset each node is a patient, the features are genes expressions and the labels represent two types of breast cancer: Luminal A/Luminal B.
+The graph edges are not provided in the dataset and must be computed using Pearson correlation.
 
-The task executed in this lab is to perform a graph node classification using a GNN.
-Each node represents a patient and the features are gene expressions.
-Each node can be classifed as Luminal A or Luminal B (breast cancer).
-
-The graph edges are not provided and must be computed using Pearson correlation.
-
-Transductive learning -> predict node labels of unlabeled nodes in the exising graph.
-
-Inductive learning -> predict node labels using a completely different graph.
-
-In this lab we use transductive learning.
-
-As and extra, the lab rquires to compare the results of the GNN with the results of a MLP classifier.
+This lab will be performed using transductive learning.
+In addition, the GNN performance needs to be compared with the performance of an MLP.
 
 # Data preparation
+The dataset contains 100 patients and around 1000 features.
+In the provided datasets, the labels are balanced. 
+We have 50% Luminal A and 50% Luminal B.
 
-GCN
-GraphSage
-GAT
+The gene expression data contains null/zero values across all patients.
+These needs to be removed because they introduce noise in the learning process.
 
-Pearson
-Spearman
-Kendal
+After the cleanup, the data needs to be scaled so that each feature has mean 0 and variance 1. This is called standard scaling.
+This process is necessary to make the learning of the neural network easier and to avoid giving a preference to features with higher values over features with lower values.
 
-Normally standard scaling and PCA should be fit only to the training data to avoid leakage of statistics, then validation and test should be transformed using the learned transformation.
+Even after the cleanup, the number of features is still too high.
+This is an issue, because we incur in the curse of dimensionality problem, which makes all points in the dataset too far away.
 
-In transductive learning all the data is provided to the GNN, so we cannot fit only the training data otherwise the features will have incompatible values.
-The fit must be done on the entire dataset. This is a special case.
+We need to apply dimensionality reduction.
+A possible approach is to apply PCA.
 
-Labels in the dataset are balanced 50-50.
+Dimensionality reduction must be applied after the standard scaling.
+
+Normally the transformations of both scaling and dimensionality reduction must be learned only from the training set, then applied to the validation and test set, to avoid leakage of statistics.
+Since in this context we perform transductive learning, the "filtering" is done by masking the labels, while the GNN receives all data.
+This requires to appply scaling and dimensionality reduction on all data, not only on the traning set.
+
+# Graph edges calculation
+The idea is to calculate the correlation of each patient using the Pearson correlation, assuming a linear correlation.
+Other approaches can be followed using Spearman or Kendal correlation but they don't seem to provide any extra benefit over Pearson.
+
+By comparing the correlation of each patient with all the other we can see that in most cases the values is low.
+In some cases we have values going over 0.3/0.4 (excluding the diagonal, representing the correlation of each patient with itself).
+
+Two possibilities are:
+* Apply a threshold on the value of the correlation and create binary edges on the patients with a value above the threshold.
+* Apply K-nn on and assign to each patient a binary edge on the closest k neighbors, using the value of the correlation.
+
+In both cases the results is a sparse binary adjacency matrix of an undirected graph, expressed with an edges list.
+
+# Model
+
+The GNN can be created using the following types of layers:
+* GCN
+* GraphSage
+* GAT
+
+The choice for this lab is to use GCN.
 
 # HPO phase
 Split dataset into training, validation, test using a fixed global seed.
@@ -53,3 +73,7 @@ The tested hyperparametes are:
 * 
 
 # Confidence interval (CI)
+TODO
+
+# Test with MLP
+TODO
