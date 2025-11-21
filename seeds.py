@@ -8,7 +8,7 @@ seed_pool = [
     702, 745, 799, 820, 856, 901, 933, 974, 1003, 1044
 ]
 
-def set_common_seeds(seed=42):
+def set_common_seeds(seed):
 
     if seed is None:
         return

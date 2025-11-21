@@ -68,7 +68,7 @@ def train_network(
     last_eval_accuracy = 0
     best_eval_accuracy = 0
     patience_counter = 0
-    best_state = None
+    best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
 
     for epoch in range(epochs):
         model.train()
