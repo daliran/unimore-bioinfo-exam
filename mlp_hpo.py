@@ -1,12 +1,10 @@
 import optuna
 from optuna.trial import Trial
 from functools import partial
-from gnn_network import GNN, train_gnn_network
+from mlp_network import MLP, train_mlp_network
 
 
-def objective(
-    trial: Trial, device, features, labels, edge_index, train_mask, eval_mask
-):
+def objective(trial: Trial, device, features, labels, train_mask, eval_mask):
 
     hidden_channels = trial.suggest_categorical("hidden_channels", [8, 16, 32, 64, 128])
     num_layers = trial.suggest_int("num_layers", 2, 5)
@@ -18,7 +16,7 @@ def objective(
     patience = 100
     input_channels = features.size(1)
 
-    model = GNN(
+    model = MLP(
         input_channels=input_channels,
         hidden_channels=hidden_channels,
         output_channels=2,
@@ -26,12 +24,11 @@ def objective(
         dropout=dropout,
     )
 
-    train_accuracy, eval_accuracy, best_eval_accuracy = train_gnn_network(
+    train_accuracy, eval_accuracy, best_eval_accuracy = train_mlp_network(
         model=model,
         device=device,
         features=features,
         labels=labels,
-        edge_index=edge_index,
         train_mask=train_mask,
         eval_mask=eval_mask,
         epochs=epochs,
@@ -44,16 +41,13 @@ def objective(
     return best_eval_accuracy
 
 
-def execute_gnn_hpo(
-    device, features, labels, edge_index, train_mask, eval_mask, trials=100
-):
+def execute_mlp_hpo(device, features, labels, train_mask, eval_mask, trials=100):
 
     wrapped_objective = partial(
         objective,
         device=device,
         features=features,
         labels=labels,
-        edge_index=edge_index,
         train_mask=train_mask,
         eval_mask=eval_mask,
     )

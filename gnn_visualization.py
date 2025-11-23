@@ -4,6 +4,7 @@ from torch_geometric.data import Data
 from torch_geometric.utils import to_networkx
 import networkx as nx
 
+
 def show_correlations(features_correlation, title="Absolute Pearson correlations"):
     corr = features_correlation.detach().cpu().abs()
 
@@ -19,12 +20,12 @@ def show_correlations(features_correlation, title="Absolute Pearson correlations
     for i, ax in enumerate(axes):
         if i < n_patients:
             row_vals = corr[i].numpy()
-            ax.plot(row_vals, color='steelblue', linewidth=0.8)
+            ax.plot(row_vals, color="steelblue", linewidth=0.8)
             ax.set_title(f"P{i}", fontsize=8)
             ax.set_ylim(ymin, ymax)
             ax.grid(True, linewidth=0.2)
         else:
-            ax.axis('off')
+            ax.axis("off")
 
     fig.suptitle(title, fontsize=14)
     plt.tight_layout(rect=(0, 0, 1, 0.97))

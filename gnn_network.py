@@ -5,7 +5,7 @@ from torch_geometric.nn import GCNConv
 
 class GNN(torch.nn.Module):
     def __init__(
-        self, input_channels, hidden_channels, output_channels, layers, dropout
+        self, input_channels, hidden_channels, output_channels, num_layers, dropout
     ):
         super().__init__()
 
@@ -14,7 +14,7 @@ class GNN(torch.nn.Module):
 
         self.convs.append(GCNConv(input_channels, hidden_channels))
 
-        for _ in range(layers - 2):
+        for _ in range(num_layers - 2):
             self.convs.append(GCNConv(hidden_channels, hidden_channels))
 
         self.convs.append(GCNConv(hidden_channels, output_channels))
@@ -31,14 +31,14 @@ class GNN(torch.nn.Module):
         return x
 
 
-def calculate_accuracy(out, labels, mask):
+def calculate_gnn_accuracy(out, labels, mask):
     prediction = out.argmax(dim=1)
     correct_labels = prediction[mask] == labels[mask]
     accuracy = int(correct_labels.sum()) / int(mask.sum())
     return accuracy
 
 
-def train_network(
+def train_gnn_network(
     model: GNN,
     device,
     features,
@@ -80,8 +80,8 @@ def train_network(
 
         with torch.no_grad():
             out = model(features, edge_index)
-            train_accuracy = calculate_accuracy(out, labels, train_mask)
-            eval_accuracy = calculate_accuracy(out, labels, eval_mask)
+            train_accuracy = calculate_gnn_accuracy(out, labels, train_mask)
+            eval_accuracy = calculate_gnn_accuracy(out, labels, eval_mask)
 
         if verbose:
             print(
