@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+import numpy as np
 
 def create_dataset_masks(
     points: int,
@@ -60,48 +61,29 @@ def remove_null_features(raw_features):
     filtered_features = raw_features[:, mask]
     return filtered_features
 
+def normalize_features(features, target_dims, seed, use_log: bool, use_standard_scaler: bool, use_pca: bool):
 
-def normalize_features(features, target_dims, seed):
-    # apply standard scaling
-    scaler = StandardScaler()
+    normalized_data = features.numpy()
 
-    scaled_data = scaler.fit_transform(features.numpy())
+    if use_log:
+        eps = np.finfo(float).eps
+        normalized_data = np.log2(normalized_data + eps)
 
-    # apply PCA for dimensionality reduction
-    if seed is not None:
-        pca = PCA(n_components=target_dims, random_state=seed)
-    else:
-        pca = PCA(n_components=target_dims)
+    if use_standard_scaler:
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(normalized_data)
+        normalized_data = scaled_data
 
-    reduced_data = pca.fit_transform(scaled_data)
+    if use_pca:
+        if seed is not None:
+            pca = PCA(n_components=target_dims, random_state=seed)
+        else:
+            pca = PCA(n_components=target_dims)
 
-    normalized_data = torch.tensor(reduced_data, dtype=torch.float32)
+        reduced_data = pca.fit_transform(normalized_data)
+        normalized_data = reduced_data
 
-    return normalized_data
-
-
-def normalize_features2(raw_features, training_mask, eval_mask, target_dims, seed):
-    training_data = raw_features[training_mask].numpy()
-    eval_data = raw_features[eval_mask].numpy()
-
-    # apply standard scaling
-    scaler = StandardScaler()
-    training_scaled_data = scaler.fit_transform(training_data)
-    eval_scaled_data = scaler.transform(eval_data)
-
-    # apply PCA for dimensionality reduction
-    if seed is not None:
-        pca = PCA(n_components=target_dims, random_state=seed)
-    else:
-        pca = PCA(n_components=target_dims)
-
-    training_reduced_data = pca.fit_transform(training_scaled_data)
-    eval_reduced_data = pca.transform(eval_scaled_data)
-
-    normalized_training_data = torch.tensor(training_reduced_data, dtype=torch.float32)
-    normalized_eval_data = torch.tensor(eval_reduced_data, dtype=torch.float32)
-
-    return normalized_training_data, normalized_eval_data
+    return torch.tensor(normalized_data, dtype=torch.float32)
 
 def compute_abs_pearson_correlation(features: torch.Tensor):
     df_temp = pd.DataFrame(features.numpy())

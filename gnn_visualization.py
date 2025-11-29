@@ -6,20 +6,20 @@ import networkx as nx
 
 
 def show_correlations(features_correlation, title="Absolute Pearson correlations"):
-    corr = features_correlation.detach().cpu().abs()
+    corr = features_correlation.detach().cpu().abs().numpy()
 
     n_patients = corr.shape[0]
     cols = 10
     rows = int(np.ceil(n_patients / cols))
 
-    fig, axes = plt.subplots(rows, cols, figsize=(20, 20), sharex=True, sharey=True)
-    ymin, ymax = -1, 1
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 2, rows * 2), sharex=True, sharey=True)
+    ymin, ymax = 0, 1
 
     axes = np.ravel(axes)
 
     for i, ax in enumerate(axes):
         if i < n_patients:
-            row_vals = corr[i].numpy()
+            row_vals = corr[i]
             ax.plot(row_vals, color="steelblue", linewidth=0.8)
             ax.set_title(f"P{i}", fontsize=8)
             ax.set_ylim(ymin, ymax)

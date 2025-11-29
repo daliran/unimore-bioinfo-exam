@@ -72,4 +72,6 @@ def mean_confidence_interval(data, confidence=0.95, dist="t"):
     else:
         raise ValueError("dist must be 't' or 'norm'")
 
-    return mean, lower, upper
+    half_width = (upper - lower) / 2
+
+    return mean, lower, upper, half_width

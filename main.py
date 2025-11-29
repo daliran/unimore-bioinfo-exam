@@ -24,7 +24,7 @@ def run_gnn(features, labels, global_seed, device):
 
     print("Training GNN")
 
-    normalized_features = normalize_features(features, target_dims=40, seed=global_seed)
+    normalized_features = normalize_features(features, target_dims=40, seed=global_seed, use_log=True, use_standard_scaler=False, use_pca=False)
 
     number_of_nodes = int(normalized_features.shape[0])
     number_of_dimensions = int(normalized_features.shape[1])
@@ -33,9 +33,9 @@ def run_gnn(features, labels, global_seed, device):
 
     # show_correlations(features_correlation)
     # edge_index = create_sparse_edges_with_threshold(features_correlation, 0.4)
-    edge_index = create_sparse_edges_with_knn(features_correlation, k=5)
+    edge_index = create_sparse_edges_with_knn(features_correlation, k=3)
 
-    visualize_graph(normalized_features, edge_index, number_of_nodes, labels)
+    # visualize_graph(normalized_features, edge_index, number_of_nodes, labels)
 
     """ train_mask, val_mask, test_mask = create_dataset_masks(
         points=number_of_nodes,
@@ -69,6 +69,15 @@ def run_gnn(features, labels, global_seed, device):
             seed=seed,
         )
 
+        #counts_train = torch.bincount(labels[train_mask])
+        #print(f"Labels for train: {counts_train}")
+
+        #counts_val = torch.bincount(labels[val_mask])
+        #print(f"Labels for validationn: {counts_val}")
+
+        #counts_test = torch.bincount(labels[test_mask])
+        #print(f"Labels for test: {counts_test}")
+
         model = GNN(
             input_channels=number_of_dimensions,
             hidden_channels=32,
@@ -99,15 +108,15 @@ def run_gnn(features, labels, global_seed, device):
 
         accuracies.append(best_eval_accuracy)
 
-    mean, lo, hi = mean_confidence_interval(accuracies)
-    print(f"Mean={mean:.4f}, 95% CI=({lo:.4f}, {hi:.4f})")
+    mean, lo, hi, hw = mean_confidence_interval(accuracies)
+    print(f"Mean={mean:.4f}, Half width={hw:.4f}, CI=({lo:.4f}, {hi:.4f})")
 
 
 def run_mlp(features, labels, global_seed, device):
 
     print("Training MLP")
 
-    normalized_features = normalize_features(features, target_dims=40, seed=global_seed)
+    normalized_features = normalize_features(features, target_dims=40, seed=global_seed, use_log=True, use_standard_scaler=False, use_pca=False)
 
     number_of_nodes = int(normalized_features.shape[0])
     number_of_dimensions = int(normalized_features.shape[1])
@@ -143,6 +152,15 @@ def run_mlp(features, labels, global_seed, device):
             seed=seed,
         )
 
+        #counts_train = torch.bincount(labels[train_mask])
+        #print(f"Labels for train: {counts_train}")
+
+        #counts_val = torch.bincount(labels[val_mask])
+        #print(f"Labels for validationn: {counts_val}")
+
+        #counts_test = torch.bincount(labels[test_mask])
+        #print(f"Labels for test: {counts_test}")
+
         model = MLP(
             input_channels=number_of_dimensions,
             hidden_channels=16,
@@ -172,8 +190,8 @@ def run_mlp(features, labels, global_seed, device):
 
         accuracies.append(best_eval_accuracy)
 
-    mean, lo, hi = mean_confidence_interval(accuracies)
-    print(f"Mean={mean:.4f}, 95% CI=({lo:.4f}, {hi:.4f})")
+    mean, lo, hi, hw = mean_confidence_interval(accuracies)
+    print(f"Mean={mean:.4f}, Half width={hw:.4f}, CI=({lo:.4f}, {hi:.4f})")
 
 
 def main():
